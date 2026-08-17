@@ -1,0 +1,599 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS TRẠNG THÁI VÀ ĐỐI TƯỢNG NGHIỆP VỤ
+// ==========================================
+
+enum TrangThaiBaiViet {
+  NHAP
+  CHO_DUYET
+  DA_DUYET
+  TU_CHOI
+  DA_XUAT_BAN
+  DA_LUU_TRU
+}
+
+enum DoiTuongThongBao {
+  CONG_KHAI
+  GIAO_VIEN
+  HOC_SINH
+  PHU_HUYNH
+}
+
+enum TrangThaiLienHe {
+  MOI
+  DANG_XU_LY
+  DA_XU_LY
+}
+
+// ==========================================
+// NHÓM 1 — NGƯỜI DÙNG VÀ PHÂN QUYỀN
+// ==========================================
+
+model nguoi_dung {
+  id                 String   @id @default(uuid())
+  ho_ten             String
+  email              String   @unique
+  so_dien_thoai      String?
+  mat_khau           String
+  anh_dai_dien       String?
+  trang_thai         Boolean  @default(true)
+  lan_dang_nhap_cuoi DateTime?
+  da_xoa             Boolean  @default(false)
+  ngay_xoa           DateTime?
+  ngay_tao           DateTime @default(now())
+  ngay_cap_nhat      DateTime @updatedAt
+
+  // Quan hệ
+  nguoi_dung_vai_tro nguoi_dung_vai_tro[]
+  bai_viet_tac_gia   bai_viet[]           @relation("TacGiaBaiViet")
+  thong_bao_tao      thong_bao[]          @relation("NguoiTaoThongBao")
+  van_ban_tao        van_ban[]            @relation("NguoiTaoVanBan")
+  album_tao          album[]              @relation("NguoiTaoAlbum")
+  tep_tin_tai_len    tep_tin[]            @relation("NguoiTaiLenTepTin")
+  video_tao          video[]              @relation("NguoiTaoVideo")
+  tai_lieu_tao       tai_lieu[]           @relation("NguoiTaoTaiLieu")
+  thanh_tich_tao     thanh_tich[]         @relation("NguoiTaoThanhTich")
+  tuyen_sinh_tao     tuyen_sinh[]         @relation("NguoiTaoTuyenSinh")
+  gioi_thieu_tao     gioi_thieu[]         @relation("NguoiTaoGioiThieu")
+  lien_he_xu_ly      lien_he[]            @relation("NguoiXuLyLienHe")
+  nhat_ky_he_thong   nhat_ky_he_thong[]   @relation("NguoiDungNhatKy")
+
+  @@index([email])
+  @@index([trang_thai])
+}
+
+model vai_tro {
+  id            String   @id @default(uuid())
+  ten           String
+  ma            String   @unique
+  mo_ta         String?
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  nguoi_dung_vai_tro nguoi_dung_vai_tro[]
+  vai_tro_quyen_han  vai_tro_quyen_han[]
+}
+
+model quyen_han {
+  id            String   @id @default(uuid())
+  ten           String
+  ma            String   @unique
+  mo_ta         String?
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  vai_tro_quyen_han vai_tro_quyen_han[]
+}
+
+model nguoi_dung_vai_tro {
+  nguoi_dung_id String
+  vai_tro_id    String
+
+  nguoi_dung nguoi_dung @relation(fields: [nguoi_dung_id], references: [id], onDelete: Cascade)
+  vai_tro    vai_tro    @relation(fields: [vai_tro_id], references: [id], onDelete: Cascade)
+
+  @@id([nguoi_dung_id, vai_tro_id])
+}
+
+model vai_tro_quyen_han {
+  vai_tro_id   String
+  quyen_han_id String
+
+  vai_tro   vai_tro   @relation(fields: [vai_tro_id], references: [id], onDelete: Cascade)
+  quyen_han quyen_han @relation(fields: [quyen_han_id], references: [id], onDelete: Cascade)
+
+  @@id([vai_tro_id, quyen_han_id])
+}
+
+// ==========================================
+// NHÓM 2 — NỘI DUNG
+// ==========================================
+
+model danh_muc {
+  id              String   @id @default(uuid())
+  ten             String
+  slug            String   @unique
+  mo_ta           String?
+  danh_muc_cha_id String?
+  thu_tu          Int      @default(0)
+  trang_thai      Boolean  @default(true)
+  ngay_tao        DateTime @default(now())
+  ngay_cap_nhat   DateTime @updatedAt
+
+  danh_muc_cha danh_muc?  @relation("DanhMucChaCon", fields: [danh_muc_cha_id], references: [id], onDelete: Restrict)
+  danh_muc_con danh_muc[] @relation("DanhMucChaCon")
+  bai_viet     bai_viet[]
+
+  @@index([slug])
+  @@index([danh_muc_cha_id])
+}
+
+model bai_viet {
+  id             String           @id @default(uuid())
+  tieu_de        String
+  slug           String           @unique
+  mo_ta          String?
+  noi_dung       String
+  anh_dai_dien   String?
+  danh_muc_id    String
+  tac_gia_id     String
+  trang_thai     TrangThaiBaiViet @default(NHAP)
+  luot_xem       Int              @default(0)
+  ngay_gui_duyet DateTime?
+  ngay_duyet     DateTime?
+  ngay_xuat_ban  DateTime?
+  da_xoa         Boolean          @default(false)
+  ngay_xoa       DateTime?
+  ngay_tao       DateTime         @default(now())
+  ngay_cap_nhat  DateTime         @updatedAt
+
+  danh_muc     danh_muc       @relation(fields: [danh_muc_id], references: [id], onDelete: Restrict)
+  tac_gia      nguoi_dung     @relation("TacGiaBaiViet", fields: [tac_gia_id], references: [id], onDelete: Restrict)
+  bai_viet_the bai_viet_the[]
+
+  @@index([slug])
+  @@index([trang_thai])
+  @@index([danh_muc_id])
+  @@index([tac_gia_id])
+}
+
+model the {
+  id            String   @id @default(uuid())
+  ten           String
+  slug          String   @unique
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  bai_viet_the bai_viet_the[]
+
+  @@index([slug])
+}
+
+model bai_viet_the {
+  bai_viet_id String
+  the_id      String
+
+  bai_viet bai_viet @relation(fields: [bai_viet_id], references: [id], onDelete: Cascade)
+  the      the      @relation(fields: [the_id], references: [id], onDelete: Cascade)
+
+  @@id([bai_viet_id, the_id])
+}
+
+// ==========================================
+// NHÓM 3 — THÔNG BÁO
+// ==========================================
+
+model thong_bao {
+  id            String           @id @default(uuid())
+  tieu_de       String
+  noi_dung      String
+  doi_tuong     DoiTuongThongBao @default(CONG_KHAI)
+  trang_thai    Boolean          @default(true)
+  nguoi_tao_id  String
+  ngay_bat_dau  DateTime?
+  ngay_ket_thuc DateTime?
+  ngay_tao      DateTime         @default(now())
+  ngay_cap_nhat DateTime         @updatedAt
+
+  nguoi_tao nguoi_dung @relation("NguoiTaoThongBao", fields: [nguoi_tao_id], references: [id], onDelete: Restrict)
+
+  @@index([trang_thai])
+  @@index([doi_tuong])
+}
+
+// ==========================================
+// NHÓM 4 — VĂN BẢN
+// ==========================================
+
+model loai_van_ban {
+  id            String   @id @default(uuid())
+  ten           String
+  ma            String   @unique
+  mo_ta         String?
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  van_ban van_ban[]
+}
+
+model van_ban {
+  id              String   @id @default(uuid())
+  ten_van_ban     String
+  so_hieu         String
+  loai_van_ban_id String
+  ngay_ban_hanh   DateTime
+  nguoi_ky        String?
+  mo_ta           String?
+  tep_tin_id      String?
+  trang_thai      Boolean  @default(true)
+  nguoi_tao_id    String
+  da_xoa          Boolean  @default(false)
+  ngay_xoa        DateTime?
+  ngay_tao        DateTime @default(now())
+  ngay_cap_nhat   DateTime @updatedAt
+
+  loai_van_ban loai_van_ban @relation(fields: [loai_van_ban_id], references: [id], onDelete: Restrict)
+  tep_tin      tep_tin?     @relation(fields: [tep_tin_id], references: [id], onDelete: SetNull)
+  nguoi_tao    nguoi_dung   @relation("NguoiTaoVanBan", fields: [nguoi_tao_id], references: [id], onDelete: Restrict)
+
+  @@index([so_hieu])
+  @@index([loai_van_ban_id])
+}
+
+// ==========================================
+// NHÓM 5 — NHÀ TRƯỜNG
+// ==========================================
+
+model to_chuyen_mon {
+  id            String   @id @default(uuid())
+  ten           String
+  mo_ta         String?
+  truong_to_id  String?
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  giao_vien giao_vien[]
+}
+
+model giao_vien {
+  id               String   @id @default(uuid())
+  ho_ten           String
+  anh_dai_dien     String?
+  chuc_vu          String?
+  to_chuyen_mon_id String
+  trinh_do         String?
+  email            String?
+  so_dien_thoai    String?
+  gioi_thieu       String?
+  trang_thai       Boolean  @default(true)
+  da_xoa           Boolean  @default(false)
+  ngay_xoa         DateTime?
+  ngay_tao         DateTime @default(now())
+  ngay_cap_nhat    DateTime @updatedAt
+
+  to_chuyen_mon to_chuyen_mon @relation(fields: [to_chuyen_mon_id], references: [id], onDelete: Restrict)
+  lop_hoc_chu_nhiem lop_hoc[]   @relation("GiaoVienChuNhiemLop")
+
+  @@index([to_chuyen_mon_id])
+}
+
+// ==========================================
+// NHÓM 6 — THƯ VIỆN
+// ==========================================
+
+model album {
+  id            String   @id @default(uuid())
+  ten           String
+  slug          String   @unique
+  mo_ta         String?
+  anh_dai_dien  String?
+  trang_thai    Boolean  @default(true)
+  nguoi_tao_id  String
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  nguoi_tao     nguoi_dung      @relation("NguoiTaoAlbum", fields: [nguoi_tao_id], references: [id], onDelete: Restrict)
+  album_tep_tin album_tep_tin[]
+
+  @@index([slug])
+}
+
+model tep_tin {
+  id               String   @id @default(uuid())
+  ten_goc          String
+  ten_luu_tru      String
+  duong_dan        String
+  url              String
+  loai_tap_tin     String
+  kich_thuoc       Int
+  nguoi_tai_len_id String
+  ngay_tao         DateTime @default(now())
+
+  nguoi_tai_len     nguoi_dung      @relation("NguoiTaiLenTepTin", fields: [nguoi_tai_len_id], references: [id], onDelete: Restrict)
+  album_tep_tin     album_tep_tin[]
+  van_ban           van_ban[]
+  tai_lieu          tai_lieu[]
+  thanh_tich_minh_chung thanh_tich[]
+}
+
+model album_tep_tin {
+  album_id   String
+  tep_tin_id String
+  thu_tu     Int    @default(0)
+
+  album   album   @relation(fields: [album_id], references: [id], onDelete: Cascade)
+  tep_tin tep_tin @relation(fields: [tep_tin_id], references: [id], onDelete: Cascade)
+
+  @@id([album_id, tep_tin_id])
+}
+
+// ==========================================
+// NHÓM 7 — THÀNH TÍCH
+// ==========================================
+
+model thanh_tich {
+  id                String   @id @default(uuid())
+  tieu_de           String
+  doi_tuong         String
+  cap               String?
+  nam_hoc           String
+  noi_dung          String?
+  anh_dai_dien      String?
+  tep_minh_chung_id String?
+  trang_thai        Boolean  @default(true)
+  nguoi_tao_id      String
+  ngay_tao          DateTime @default(now())
+  ngay_cap_nhat     DateTime @updatedAt
+
+  tep_minh_chung tep_tin?   @relation(fields: [tep_minh_chung_id], references: [id], onDelete: SetNull)
+  nguoi_tao      nguoi_dung @relation("NguoiTaoThanhTich", fields: [nguoi_tao_id], references: [id], onDelete: Restrict)
+}
+
+// ==========================================
+// NHÓM 8 — TUYỂN SINH
+// ==========================================
+
+model tuyen_sinh {
+  id            String   @id @default(uuid())
+  tieu_de       String
+  nam_hoc       String
+  noi_dung      String
+  thoi_gian     String?
+  dieu_kien     String?
+  ho_so         String?
+  huong_dan     String?
+  trang_thai    Boolean  @default(true)
+  nguoi_tao_id  String
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  nguoi_tao nguoi_dung @relation("NguoiTaoTuyenSinh", fields: [nguoi_tao_id], references: [id], onDelete: Restrict)
+}
+
+// ==========================================
+// NHÓM 9 — LIÊN HỆ
+// ==========================================
+
+model lien_he {
+  id            String          @id @default(uuid())
+  ho_ten        String
+  so_dien_thoai String
+  email         String?
+  noi_dung      String
+  trang_thai    TrangThaiLienHe @default(MOI)
+  nguoi_xu_ly_id String?
+  ngay_xu_ly    DateTime?
+  ngay_tao      DateTime        @default(now())
+
+  nguoi_xu_ly nguoi_dung? @relation("NguoiXuLyLienHe", fields: [nguoi_xu_ly_id], references: [id], onDelete: SetNull)
+}
+
+// ==========================================
+// NHÓM 10 — CẤU HÌNH HỆ THỐNG
+// ==========================================
+
+model cau_hinh {
+  id            String   @id @default(uuid())
+  ma_cau_hinh   String   @unique
+  ten_cau_hinh  String
+  gia_tri       String
+  mo_ta         String?
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+}
+
+// ==========================================
+// NHÓM 11 — NHẬT KÝ HỆ THỐNG
+// ==========================================
+
+model nhat_ky_he_thong {
+  id                 String   @id @default(uuid())
+  nguoi_dung_id      String?
+  hanh_dong          String
+  doi_tuong          String
+  doi_tuong_id       String?
+  noi_dung_cu        String?
+  noi_dung_moi       String?
+  dia_chi_ip         String?
+  thong_tin_thiet_bi String?
+  ngay_tao           DateTime @default(now())
+
+  nguoi_dung nguoi_dung? @relation("NguoiDungNhatKy", fields: [nguoi_dung_id], references: [id], onDelete: SetNull)
+}
+
+// ==========================================
+// NHÓM 12 — QUẢN LÝ HỌC SINH, LỚP HỌC VÀ PHỤ HUYNH
+// ==========================================
+
+model lop_hoc {
+  id            String   @id @default(uuid())
+  ten_lop       String   // Vd: 6A1, 7A2, 8B, 9A
+  khoi          Int      // 6, 7, 8, 9
+  nam_hoc       String   // Vd: 2025-2026
+  gvcn_id       String?
+  mo_ta         String?
+  trang_thai    Boolean  @default(true)
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  gvcn     giao_vien? @relation("GiaoVienChuNhiemLop", fields: [gvcn_id], references: [id], onDelete: SetNull)
+  hoc_sinh hoc_sinh[]
+
+  @@index([khoi])
+  @@index([nam_hoc])
+}
+
+model hoc_sinh {
+  id            String    @id @default(uuid())
+  ma_hoc_sinh   String    @unique
+  ho_ten        String
+  ngay_sinh     DateTime?
+  gioi_tinh     String?   // Nam / Nữ
+  dia_chi       String?
+  lop_hoc_id    String
+  trang_thai    Boolean   @default(true)
+  da_xoa        Boolean   @default(false)
+  ngay_xoa      DateTime?
+  ngay_tao      DateTime  @default(now())
+  ngay_cap_nhat DateTime  @updatedAt
+
+  lop_hoc            lop_hoc              @relation(fields: [lop_hoc_id], references: [id], onDelete: Restrict)
+  phu_huynh_hoc_sinh phu_huynh_hoc_sinh[]
+
+  @@index([ma_hoc_sinh])
+  @@index([lop_hoc_id])
+}
+
+model phu_huynh {
+  id            String    @id @default(uuid())
+  ho_ten        String
+  so_dien_thoai String?
+  email         String?
+  dia_chi       String?
+  trang_thai    Boolean   @default(true)
+  da_xoa        Boolean   @default(false)
+  ngay_xoa      DateTime?
+  ngay_tao      DateTime  @default(now())
+  ngay_cap_nhat DateTime  @updatedAt
+
+  phu_huynh_hoc_sinh phu_huynh_hoc_sinh[]
+}
+
+model phu_huynh_hoc_sinh {
+  phu_huynh_id           String
+  hoc_sinh_id            String
+  quan_he                String  @default("Bố/Mẹ") // Bố, Mẹ, Người giám hộ
+  la_nguoi_giam_ho_chinh Boolean @default(true)
+
+  phu_huynh phu_huynh @relation(fields: [phu_huynh_id], references: [id], onDelete: Cascade)
+  hoc_sinh  hoc_sinh  @relation(fields: [hoc_sinh_id], references: [id], onDelete: Cascade)
+
+  @@id([phu_huynh_id, hoc_sinh_id])
+}
+
+// ==========================================
+// NHÓM 13 — VIDEO VÀ THƯ VIỆN SỐ
+// ==========================================
+
+model video {
+  id            String   @id @default(uuid())
+  tieu_de       String
+  slug          String   @unique
+  mo_ta         String?
+  url_video     String
+  anh_thumbnail String?
+  luot_xem      Int      @default(0)
+  trang_thai    Boolean  @default(true)
+  nguoi_tao_id  String
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  nguoi_tao nguoi_dung @relation("NguoiTaoVideo", fields: [nguoi_tao_id], references: [id], onDelete: Restrict)
+
+  @@index([slug])
+  @@index([trang_thai])
+}
+
+model danh_muc_tai_lieu {
+  id            String   @id @default(uuid())
+  ten           String
+  ma            String   @unique
+  mo_ta         String?
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  tai_lieu tai_lieu[]
+}
+
+model tai_lieu {
+  id                  String           @id @default(uuid())
+  ten_tai_lieu        String
+  mo_ta               String?
+  danh_muc_tai_lieu_id String
+  tac_gia             String?
+  doi_tuong           DoiTuongThongBao @default(CONG_KHAI)
+  tep_tin_id          String?
+  duong_dan_lien_ket  String?
+  anh_thumb           String?
+  luot_tai            Int              @default(0)
+  trang_thai          Boolean          @default(true)
+  nguoi_tao_id        String
+  da_xoa              Boolean          @default(false)
+  ngay_xoa            DateTime?
+  ngay_tao            DateTime         @default(now())
+  ngay_cap_nhat       DateTime         @updatedAt
+
+  danh_muc_tai_lieu danh_muc_tai_lieu @relation(fields: [danh_muc_tai_lieu_id], references: [id], onDelete: Restrict)
+  tep_tin           tep_tin?           @relation(fields: [tep_tin_id], references: [id], onDelete: SetNull)
+  nguoi_tao         nguoi_dung         @relation("NguoiTaoTaiLieu", fields: [nguoi_tao_id], references: [id], onDelete: Restrict)
+
+  @@index([danh_muc_tai_lieu_id])
+  @@index([trang_thai])
+}
+
+// ==========================================
+// NHÓM 14 — THỐNG KÊ TRUY CẬP WEBSITE
+// ==========================================
+
+model luot_truy_cap {
+  id                 String   @id @default(uuid())
+  session_id         String   @unique
+  lan_cuoi_hoat_dong DateTime @default(now()) @updatedAt
+  ngay_tao           DateTime @default(now())
+
+  @@index([ngay_tao])
+  @@index([lan_cuoi_hoat_dong])
+}
+
+// ==========================================
+// NHÓM 15 — GIỚI THIỆU CHUNG
+// ==========================================
+
+model gioi_thieu {
+  id             String   @id @default(uuid())
+  tieu_de_chinh  String
+  tieu_de_phu    String?
+  anh_nen        String?
+  noi_dung_chinh String
+  trang_thai     Boolean  @default(true)
+  nguoi_tao_id   String?
+  da_xoa         Boolean  @default(false)
+  ngay_xoa       DateTime?
+  ngay_tao       DateTime @default(now())
+  ngay_cap_nhat  DateTime @updatedAt
+
+  nguoi_tao      nguoi_dung? @relation("NguoiTaoGioiThieu", fields: [nguoi_tao_id], references: [id], onDelete: SetNull)
+
+  @@index([trang_thai])
+}
+
+
+

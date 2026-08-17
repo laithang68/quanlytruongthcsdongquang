@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "DoiTuongThongBao" RENAME VALUE 'PHU_HYNH' TO 'PHU_HUYNH';
