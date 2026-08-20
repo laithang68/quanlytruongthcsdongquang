@@ -23,6 +23,9 @@ import { TruyCapModule } from './modules/truy-cap/truy-cap.module';
 import { LienHeModule } from './modules/lien-he/lien-he.module';
 import { GioiThieuModule } from './modules/gioi-thieu/gioi-thieu.module';
 import { PhanQuyenModule } from './modules/phan-quyen/phan-quyen.module';
+import { DanhMucChucVuModule } from './modules/danh-muc-chuc-vu/danh-muc-chuc-vu.module';
+import { DanhMucBoMonModule } from './modules/danh-muc-bo-mon/danh-muc-bo-mon.module';
+import { TruyCapNhanhModule } from './modules/truy-cap-nhanh/truy-cap-nhanh.module';
 
 @Module({
   imports: [
@@ -53,6 +56,9 @@ import { PhanQuyenModule } from './modules/phan-quyen/phan-quyen.module';
     LienHeModule,
     GioiThieuModule,
     PhanQuyenModule,
+    DanhMucChucVuModule,
+    DanhMucBoMonModule,
+    TruyCapNhanhModule,
   ],
   controllers: [],
   providers: [],

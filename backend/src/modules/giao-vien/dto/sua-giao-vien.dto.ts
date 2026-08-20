@@ -3,6 +3,8 @@ export class SuaGiaoVienDto {
   to_chuyen_mon_id?: string;
   anh_dai_dien?: string;
   chuc_vu?: string;
+  chuc_vu_id?: string;
+  bo_mon_id?: string;
   trinh_do?: string;
   email?: string;
   so_dien_thoai?: string;

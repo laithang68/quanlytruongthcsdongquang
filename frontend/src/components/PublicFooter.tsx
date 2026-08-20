@@ -38,32 +38,32 @@ export default function PublicFooter() {
           <ul className="space-y-2 text-slate-300">
             <li>
               <button onClick={() => router.push('/')} className="hover:text-amber-300 transition">
-                → Trang chủ
+                Trang chủ
               </button>
             </li>
             <li>
               <button onClick={() => router.push('/gioi-thieu')} className="hover:text-amber-300 transition">
-                → Giới thiệu nhà trường
+                Giới thiệu nhà trường
               </button>
             </li>
             <li>
               <button onClick={() => router.push('/tin-tuc')} className="hover:text-amber-300 transition">
-                → Tin tức & Sự kiện
+                Tin tức & Sự kiện
               </button>
             </li>
             <li>
               <button onClick={() => router.push('/thong-bao')} className="hover:text-amber-300 transition">
-                → Thông báo công khai
+                Thông báo công khai
               </button>
             </li>
             <li>
               <button onClick={() => router.push('/van-ban')} className="hover:text-amber-300 transition">
-                → Danh mục Văn bản
+                Danh mục Văn bản
               </button>
             </li>
             <li>
               <button onClick={() => router.push('/giao-vien')} className="hover:text-amber-300 transition">
-                → Đội ngũ Giáo viên
+                Đội ngũ Giáo viên
               </button>
             </li>
           </ul>

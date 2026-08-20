@@ -33,8 +33,10 @@ export class GiaoVienController {
     @Query('to_chuyen_mon_id') toChuyenMonId?: string,
     @Query('tu_khoa') tuKhoa?: string,
     @Query('chuc_vu') chucVu?: string,
+    @Query('chuc_vu_id') chucVuId?: string,
+    @Query('bo_mon_id') boMonId?: string,
   ) {
-    return this.giaoVienService.layDanhSachPublic(toChuyenMonId, tuKhoa, chucVu);
+    return this.giaoVienService.layDanhSachPublic(toChuyenMonId, tuKhoa, chucVu, chucVuId, boMonId);
   }
 
   @Get('cong-khai/:id')

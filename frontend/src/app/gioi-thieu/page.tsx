@@ -24,11 +24,23 @@ interface GiaoVienPublic {
   ho_ten: string;
   anh_dai_dien?: string;
   chuc_vu?: string;
+  chuc_vu_id?: string;
+  bo_mon_id?: string;
+  danh_muc_chuc_vu?: {
+    id: string;
+    ten: string;
+    ma: string;
+  };
+  danh_muc_bo_mon?: {
+    id: string;
+    ten: string;
+    ma: string;
+  };
   trinh_do?: string;
   gioi_thieu?: string;
   email?: string;
   so_dien_thoai?: string;
-  to_chuyen_mon: { id: string; ten: string };
+  to_chuyen_mon?: { id: string; ten: string };
 }
 
 interface GioiThieuCMS {
@@ -72,13 +84,19 @@ export default function TrangGioiThieu() {
     ])
       .then(([toRes, gvRes, gtRes]) => {
         if (toRes.thanh_cong) setDanhSachTo(toRes.du_lieu);
-        if (gvRes.thanh_cong) {
-          const bgh = gvRes.du_lieu.filter(
-            (gv: GiaoVienPublic) =>
-              gv.chuc_vu?.toLowerCase().includes('hiệu trưởng') ||
-              gv.chuc_vu?.toLowerCase().includes('phó hiệu trưởng') ||
-              gv.chuc_vu?.toLowerCase().includes('giám hiệu'),
-          );
+        if (gvRes.thanh_cong && Array.isArray(gvRes.du_lieu)) {
+          // CHỈ lọc theo mã danh mục chức vụ chuẩn: HIEU_TRUONG và HIEU_PHO
+          const bgh = gvRes.du_lieu
+            .filter(
+              (gv: GiaoVienPublic) =>
+                gv.danh_muc_chuc_vu?.ma === 'HIEU_TRUONG' ||
+                gv.danh_muc_chuc_vu?.ma === 'HIEU_PHO',
+            )
+            .sort((a: GiaoVienPublic, b: GiaoVienPublic) => {
+              if (a.danh_muc_chuc_vu?.ma === 'HIEU_TRUONG' && b.danh_muc_chuc_vu?.ma !== 'HIEU_TRUONG') return -1;
+              if (a.danh_muc_chuc_vu?.ma !== 'HIEU_TRUONG' && b.danh_muc_chuc_vu?.ma === 'HIEU_TRUONG') return 1;
+              return 0;
+            });
           setBanGiamHieu(bgh);
         }
         if (gtRes.thanh_cong && gtRes.du_lieu) {
@@ -255,8 +273,14 @@ export default function TrangGioiThieu() {
 
                           <div className="pb-1 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5 font-bold text-orange-600 dark:text-emerald-400">
                             <span>🎗️ Chức vụ:</span>
-                            <span>{gv.chuc_vu || 'Hiệu trưởng'}</span>
+                            <span>{gv.danh_muc_chuc_vu?.ten || gv.chuc_vu || 'Hiệu trưởng'}</span>
                           </div>
+
+                          {gv.danh_muc_bo_mon && (
+                            <div className="pb-1 border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                              📚 Bộ môn: <strong className="text-slate-900 dark:text-white font-semibold">{gv.danh_muc_bo_mon.ten}</strong>
+                            </div>
+                          )}
 
                           <div className="pb-1 border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
                             🎓 Học hàm, học vị: <strong className="text-slate-900 dark:text-white font-semibold">{gv.trinh_do || 'Cử nhân Sư phạm'}</strong>

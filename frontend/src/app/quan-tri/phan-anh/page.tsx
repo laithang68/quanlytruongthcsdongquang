@@ -7,6 +7,7 @@ import AdminSidebar from '@/components/AdminSidebar';
 import AdminHeader from '@/components/AdminHeader';
 import { useToast } from '@/components/admin/ToastContext';
 import ConfirmDeleteModal from '@/components/admin/ConfirmDeleteModal';
+import { hasPermission } from '@/lib/permission';
 
 const getToken = () => {
   if (typeof window === 'undefined') return '';
@@ -266,20 +267,22 @@ export default function QuanLyPhanAnhPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={handleXuatExcel}
-              disabled={dangXuatExcel}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition shadow-md flex items-center justify-center gap-2 self-start sm:self-auto"
-            >
-              {dangXuatExcel ? (
-                <span>Đang xuất Excel...</span>
-              ) : (
-                <>
-                  <span>📊 Xuất dữ liệu Excel</span>
-                </>
-              )}
-            </button>
+            {hasPermission(currentUser, 'phan_anh_xuat_excel') && (
+              <button
+                type="button"
+                onClick={handleXuatExcel}
+                disabled={dangXuatExcel}
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition shadow-md flex items-center justify-center gap-2 self-start sm:self-auto"
+              >
+                {dangXuatExcel ? (
+                  <span>Đang xuất Excel...</span>
+                ) : (
+                  <>
+                    <span>📊 Xuất dữ liệu Excel</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Filter & Search Bar */}
@@ -405,20 +408,24 @@ export default function QuanLyPhanAnhPage() {
                           >
                             👁️ Xem
                           </button>
-                          <button
-                            onClick={() => { setSelectedItem(item); setTrangThaiMoi(item.trang_thai); setShowModalTrangThai(true); }}
-                            className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 font-bold transition text-[11px]"
-                            title="Cập nhật trạng thái"
-                          >
-                            ✏️ Trạng thái
-                          </button>
-                          <button
-                            onClick={() => { setSelectedItem(item); setShowModalXoa(true); }}
-                            className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 font-bold transition text-[11px]"
-                            title="Xóa phản ánh"
-                          >
-                            🗑️ Xóa
-                          </button>
+                          {hasPermission(currentUser, 'phan_anh_sua') && (
+                            <button
+                              onClick={() => { setSelectedItem(item); setTrangThaiMoi(item.trang_thai); setShowModalTrangThai(true); }}
+                              className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 font-bold transition text-[11px]"
+                              title="Cập nhật trạng thái"
+                            >
+                              ✏️ Trạng thái
+                            </button>
+                          )}
+                          {hasPermission(currentUser, 'phan_anh_xoa') && (
+                            <button
+                              onClick={() => { setSelectedItem(item); setShowModalXoa(true); }}
+                              className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 font-bold transition text-[11px]"
+                              title="Xóa phản ánh"
+                            >
+                              🗑️ Xóa
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

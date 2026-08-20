@@ -87,6 +87,7 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
     { label: 'Quản lý Thư viện ảnh', href: '/quan-tri/thu-vien-anh', icon: '🖼️', perm: 'thu_vien_anh_xem' },
     { label: 'Quản lý Thư viện số', href: '/quan-tri/thu-vien-so', icon: '📚', perm: 'thu_vien_so_xem' },
     { label: 'QL Hoạt động & Sự kiện', href: '/quan-tri/hoat-dong', icon: '🎪', perm: 'hoat_dong_xem' },
+    { label: 'Truy cập nhanh (Banner)', href: '/quan-tri/truy-cap-nhanh', icon: '🔗', perm: 'tong_quan_xem' },
     { label: 'Thông tin Phản ánh', href: '/quan-tri/phan-anh', icon: '✉️', perm: 'phan_anh_xem' },
     { label: 'Nhật ký Hoạt động', href: '/quan-tri?view=nhat-ky', icon: '📜', perm: 'nhat_ky_xem' },
   ];

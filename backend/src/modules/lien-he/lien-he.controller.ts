@@ -16,6 +16,8 @@ import { TaoLienHeDto } from './dto/tao-lien-he.dto';
 import { LayDanhSachLienHeDto } from './dto/lay-danh-sach-lien-he.dto';
 import { CapNhatTrangThaiLienHeDto } from './dto/cap-nhat-trang-thai.dto';
 import { XacThucGuard } from '../xac-thuc/guards/xac-thuc.guard';
+import { QuyenHanGuard } from '../xac-thuc/guards/quyen-han.guard';
+import { QuyenHan } from '../xac-thuc/decorators/quyen-han.decorator';
 import { Response } from 'express';
 
 @Controller('lien-he')
@@ -31,16 +33,18 @@ export class LienHeController {
   }
 
   // -------------------------------------------------------------
-  // ADMIN APIs: Quản trị Thông tin phản ánh (Bảo vệ bằng XacThucGuard)
+  // ADMIN APIs: Quản trị Thông tin phản ánh (Bảo vệ bằng RBAC)
   // -------------------------------------------------------------
   @Get()
-  @UseGuards(XacThucGuard)
+  @UseGuards(XacThucGuard, QuyenHanGuard)
+  @QuyenHan('phan_anh_xem')
   async layDanhSachAdmin(@Query() dto: LayDanhSachLienHeDto) {
     return this.lienHeService.layDanhSachAdmin(dto);
   }
 
   @Get('xuat-excel')
-  @UseGuards(XacThucGuard)
+  @UseGuards(XacThucGuard, QuyenHanGuard)
+  @QuyenHan('phan_anh_xuat_excel')
   async xuatExcel(
     @Query() dto: LayDanhSachLienHeDto,
     @Res() res: Response,
@@ -52,13 +56,15 @@ export class LienHeController {
   }
 
   @Get(':id')
-  @UseGuards(XacThucGuard)
+  @UseGuards(XacThucGuard, QuyenHanGuard)
+  @QuyenHan('phan_anh_xem')
   async layChiTietAdmin(@Param('id') id: string) {
     return this.lienHeService.layChiTietAdmin(id);
   }
 
   @Patch(':id/trang-thai')
-  @UseGuards(XacThucGuard)
+  @UseGuards(XacThucGuard, QuyenHanGuard)
+  @QuyenHan('phan_anh_sua')
   async capNhatTrangThai(
     @Param('id') id: string,
     @Body() dto: CapNhatTrangThaiLienHeDto,
@@ -70,7 +76,8 @@ export class LienHeController {
   }
 
   @Delete(':id')
-  @UseGuards(XacThucGuard)
+  @UseGuards(XacThucGuard, QuyenHanGuard)
+  @QuyenHan('phan_anh_xoa')
   async xoaLienHe(@Param('id') id: string, @Req() req: any) {
     const ip = req.ip || req.connection?.remoteAddress;
     const userAgent = req.headers['user-agent'];

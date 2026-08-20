@@ -96,6 +96,15 @@ interface ToChuyenMonItem {
   };
 }
 
+interface TruyCapNhanhItem {
+  id: string;
+  ten: string;
+  anh: string;
+  url: string;
+  thu_tu: number;
+  trang_thai: boolean;
+}
+
 export default function TrangChu() {
   const router = useRouter();
 
@@ -109,6 +118,8 @@ export default function TrangChu() {
   const [danhSachAlbum, setDanhSachAlbum] = useState<AlbumItem[]>([]);
   const [danhSachTaiLieu, setDanhSachTaiLieu] = useState<TaiLieuItem[]>([]);
   const [danhSachToChuyenMon, setDanhSachToChuyenMon] = useState<ToChuyenMonItem[]>([]);
+  const [danhSachTruyCapNhanh, setDanhSachTruyCapNhanh] = useState<TruyCapNhanhItem[]>([]);
+  const [hienThiTatCaTruyCapNhanh, setHienThiTatCaTruyCapNhanh] = useState(false);
   const [dangTai, setDangTai] = useState(true);
 
   // Tạo hoặc lấy Session ID cho khách truy cập
@@ -208,6 +219,14 @@ export default function TrangChu() {
       .then((res) => res.json())
       .then((data) => {
         if (data.thanh_cong) setDanhSachToChuyenMon(data.du_lieu);
+      })
+      .catch(() => { });
+
+    // 10. Tải Truy cập nhanh (Banners)
+    fetch(getApiUrl('/api/v1/truy-cap-nhanh/cong-khai'))
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.thanh_cong) setDanhSachTruyCapNhanh(data.du_lieu);
       })
       .catch(() => { })
       .finally(() => setDangTai(false));
@@ -500,11 +519,14 @@ export default function TrangChu() {
             <aside className="lg:col-span-4 space-y-8">
               {/* SIDEBAR WIDGET 1: THÔNG BÁO NHANH */}
               <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl transition-colors">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500 dark:bg-cyan-400 animate-ping"></span>
-                    THÔNG BÁO MỚI
-                  </h3>
+                {/* Header Tab Ribbon Chuẩn mẫu */}
+                <div className="flex items-center border-b-2 border-[#ff7200] pb-0 mb-3 ">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-6 bg-[#ff7200] shrink-0"></span>
+                    <div className="bg-[#ff7200] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-4 py-1.5 relative flex items-center pr-7 [clip-path:polygon(0_0,calc(100%-14px)_0,100%_100%,0_100%)]">
+                      THÔNG BÁO MỚI
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => router.push('/lich-hoat-dong')}
@@ -546,17 +568,25 @@ export default function TrangChu() {
 
               {/* SIDEBAR WIDGET 2: TỔ CHUYÊN MÔN (PORTAL LIST CHUẨN MẪU GIAI ĐOẠN 15.2) */}
               <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl transition-colors">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400"></span>
-                    TỔ CHUYÊN MÔN
-                  </h3>
+                {/* Header Tab Ribbon Chuẩn mẫu */}
+                <div className="relative border-b-2 border-[#059669] pb-0 mb-3 ">
+                  {/* Tiêu đề */}
+                  <div className="flex items-center">
+                    <span className="w-1.5 h-6 bg-[#059669] shrink-0"></span>
+
+                    <div className="ml-2 bg-[#059669] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-4 py-1.5 pr-7 relative flex items-center [clip-path:polygon(0_0,calc(100%-14px)_0,100%_100%,0_100%)]">
+                      TỔ CHUYÊN MÔN
+                    </div>
+                  </div>
+
+                  {/* Xem tất cả */}
                   <button
                     onClick={() => router.push('/to-chuc')}
-                    className="text-[11px] text-orange-600 dark:text-emerald-400 hover:underline font-bold"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-orange-600 dark:text-emerald-400 hover:underline font-bold whitespace-nowrap"
                   >
                     Xem tất cả →
                   </button>
+
                 </div>
 
                 {danhSachToChuyenMon.length === 0 ? (
@@ -588,16 +618,74 @@ export default function TrangChu() {
                 )}
               </section>
 
+              {/* SIDEBAR WIDGET: TRUY CẬP NHANH (LIỀN KHỐI CHUẨN MẪU E-PORTAL) */}
+              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl transition-colors">
+                {/* Header Tab Ribbon Chuẩn mẫu */}
+                <div className="flex items-center border-b-2 border-[#0284C7] pb-0 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-6 bg-[#0284C7] shrink-0"></span>
+                    <div className="bg-[#0284C7] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-4 py-1.5 relative flex items-center pr-7 [clip-path:polygon(0_0,calc(100%-14px)_0,100%_100%,0_100%)]">
+                      TRUY CẬP NHANH
+                    </div>
+                  </div>
+                </div>
+
+                {danhSachTruyCapNhanh.length === 0 ? (
+                  <div className="p-4 text-center text-slate-500 text-xs">Đang cập nhật các liên kết truy cập nhanh.</div>
+                ) : (
+                  <div>
+                    {/* Khung chứa các banner xếp dọc liên tiếp, nối tiếp sát khít nhau như ảnh mẫu */}
+                    <div className="w-full border border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-950 divide-y divide-slate-400 dark:divide-slate-600 overflow-hidden shadow-sm m-0 p-0">
+                      {(hienThiTatCaTruyCapNhanh
+                        ? danhSachTruyCapNhanh
+                        : danhSachTruyCapNhanh.slice(0, 5)
+                      ).map((banner) => (
+                        <a
+                          key={banner.id}
+                          href={banner.url}
+                          target={banner.url.startsWith('http') ? '_blank' : '_self'}
+                          rel={banner.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                          title={banner.ten}
+                          className="block w-full m-0 p-0 overflow-hidden hover:opacity-95 transition-opacity"
+                        >
+                          <img
+                            src={getMediaUrl(banner.anh)}
+                            alt={banner.ten}
+                            className="block w-full h-auto m-0 p-0"
+                            loading="lazy"
+                          />
+                        </a>
+                      ))}
+                    </div>
+
+                    {danhSachTruyCapNhanh.length > 5 && (
+                      <div className="pt-2.5 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setHienThiTatCaTruyCapNhanh(!hienThiTatCaTruyCapNhanh)}
+                          className="text-xs font-bold text-[#0284C7] dark:text-sky-400 hover:underline transition inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          {hienThiTatCaTruyCapNhanh ? 'Thu gọn ↑' : `Xem thêm (${danhSachTruyCapNhanh.length}) →`}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+
               {/* SIDEBAR WIDGET 3: THƯ VIỆN SỐ */}
-              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl transition-colors">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-orange-600 dark:bg-blue-500"></span>
-                    THƯ VIỆN SỐ - HỌC LIỆU
-                  </h3>
+              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl transition-colors">
+                {/* Header Tab Ribbon Chuẩn mẫu */}
+                <div className="flex items-center border-b-2 border-[#17a2b8] pb-0 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-6 bg-[#17a2b8] shrink-0"></span>
+                    <div className="bg-[#17a2b8] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-4 py-1.5 relative flex items-center pr-7 [clip-path:polygon(0_0,calc(100%-14px)_0,100%_100%,0_100%)]">
+                      THƯ VIỆN SỐ - HỌC LIỆU
+                    </div>
+                  </div>
                   <button
                     onClick={() => router.push('/thu-vien-so')}
-                    className="text-[11px] text-orange-600 dark:text-blue-400 hover:underline font-semibold"
+                    className=" absolute right-12 text-[11px]  text-orange-600 dark:text-blue-400 hover:underline font-semibold"
                   >
                     Xem tất cả →
                   </button>
@@ -649,13 +737,16 @@ export default function TrangChu() {
               )}
 
               {/* SIDEBAR WIDGET 5 (CUỐI CÙNG): THỐNG KÊ TRUY CẬP (GIAI ĐOẠN 19.5 - REAL DATA) */}
-              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl transition-colors">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="text-sm font-bold text-[#E97036] uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#E97036] animate-pulse"></span>
-                    THỐNG KÊ TRUY CẬP
-                  </h3>
-                  <span className="text-[10px] text-slate-400 font-medium">Trực tuyến</span>
+              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl transition-colors">
+                {/* Header Tab Ribbon Chuẩn mẫu */}
+                <div className="flex items-center border-b-2 border-[#F59E0B] pb-0 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-6 bg-[#F59E0B] shrink-0"></span>
+                    <div className="bg-[#F59E0B] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-4 py-1.5 relative flex items-center pr-7 [clip-path:polygon(0_0,calc(100%-14px)_0,100%_100%,0_100%)]">
+                      THỐNG KÊ TRUY CẬP
+                    </div>
+                    <span className="absolute right-20 text-[10px] text-slate-400 font-medium">Trực tuyến</span>
+                  </div>
                 </div>
 
                 <div className="space-y-2.5 text-xs">

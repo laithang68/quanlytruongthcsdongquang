@@ -33,6 +33,14 @@ enum TrangThaiLienHe {
   DA_XU_LY
 }
 
+enum TrangThaiHocSinh {
+  DANG_HOC
+  LUU_BAN
+  THOI_HOC
+  CHUYEN_TRUONG
+  TOT_NGHIEP
+}
+
 // ==========================================
 // NHÓM 1 — NGƯỜI DÙNG VÀ PHÂN QUYỀN
 // ==========================================
@@ -41,8 +49,11 @@ model nguoi_dung {
   id                 String   @id @default(uuid())
   ho_ten             String
   email              String   @unique
+  ten_dang_nhap      String?  @unique
   so_dien_thoai      String?
   mat_khau           String
+  mat_khau_mac_dinh  Boolean  @default(false)
+  yeu_cau_doi_mat_khau Boolean @default(false)
   anh_dai_dien       String?
   trang_thai         Boolean  @default(true)
   lan_dang_nhap_cuoi DateTime?
@@ -53,6 +64,7 @@ model nguoi_dung {
 
   // Quan hệ
   nguoi_dung_vai_tro nguoi_dung_vai_tro[]
+  hoc_sinh           hoc_sinh?
   bai_viet_tac_gia   bai_viet[]           @relation("TacGiaBaiViet")
   thong_bao_tao      thong_bao[]          @relation("NguoiTaoThongBao")
   van_ban_tao        van_ban[]            @relation("NguoiTaoVanBan")
@@ -67,6 +79,7 @@ model nguoi_dung {
   nhat_ky_he_thong   nhat_ky_he_thong[]   @relation("NguoiDungNhatKy")
 
   @@index([email])
+  @@index([ten_dang_nhap])
   @@index([trang_thai])
 }
 
@@ -252,6 +265,32 @@ model van_ban {
 // NHÓM 5 — NHÀ TRƯỜNG
 // ==========================================
 
+model danh_muc_chuc_vu {
+  id            String   @id @default(uuid())
+  ten           String
+  ma            String   @unique
+  mo_ta         String?
+  thu_tu        Int      @default(0)
+  trang_thai    Boolean  @default(true)
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  giao_vien giao_vien[]
+}
+
+model danh_muc_bo_mon {
+  id            String   @id @default(uuid())
+  ten           String
+  ma            String   @unique
+  mo_ta         String?
+  thu_tu        Int      @default(0)
+  trang_thai    Boolean  @default(true)
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
+
+  giao_vien giao_vien[]
+}
+
 model to_chuyen_mon {
   id            String   @id @default(uuid())
   ten           String
@@ -268,6 +307,8 @@ model giao_vien {
   ho_ten           String
   anh_dai_dien     String?
   chuc_vu          String?
+  chuc_vu_id       String?
+  bo_mon_id        String?
   to_chuyen_mon_id String
   trinh_do         String?
   email            String?
@@ -279,10 +320,14 @@ model giao_vien {
   ngay_tao         DateTime @default(now())
   ngay_cap_nhat    DateTime @updatedAt
 
-  to_chuyen_mon to_chuyen_mon @relation(fields: [to_chuyen_mon_id], references: [id], onDelete: Restrict)
-  lop_hoc_chu_nhiem lop_hoc[]   @relation("GiaoVienChuNhiemLop")
+  danh_muc_chuc_vu danh_muc_chuc_vu? @relation(fields: [chuc_vu_id], references: [id], onDelete: Restrict)
+  danh_muc_bo_mon  danh_muc_bo_mon?  @relation(fields: [bo_mon_id], references: [id], onDelete: Restrict)
+  to_chuyen_mon    to_chuyen_mon     @relation(fields: [to_chuyen_mon_id], references: [id], onDelete: Restrict)
+  lop_hoc_chu_nhiem lop_hoc[]         @relation("GiaoVienChuNhiemLop")
 
   @@index([to_chuyen_mon_id])
+  @@index([chuc_vu_id])
+  @@index([bo_mon_id])
 }
 
 // ==========================================
@@ -444,32 +489,68 @@ model lop_hoc {
   ngay_tao      DateTime @default(now())
   ngay_cap_nhat DateTime @updatedAt
 
-  gvcn     giao_vien? @relation("GiaoVienChuNhiemLop", fields: [gvcn_id], references: [id], onDelete: SetNull)
-  hoc_sinh hoc_sinh[]
+  gvcn            giao_vien?        @relation("GiaoVienChuNhiemLop", fields: [gvcn_id], references: [id], onDelete: SetNull)
+  hoc_sinh        hoc_sinh[]
+  lich_su_lop_hoc lich_su_lop_hoc[]
 
   @@index([khoi])
   @@index([nam_hoc])
 }
 
 model hoc_sinh {
-  id            String    @id @default(uuid())
-  ma_hoc_sinh   String    @unique
-  ho_ten        String
-  ngay_sinh     DateTime?
-  gioi_tinh     String?   // Nam / Nữ
-  dia_chi       String?
-  lop_hoc_id    String
-  trang_thai    Boolean   @default(true)
-  da_xoa        Boolean   @default(false)
-  ngay_xoa      DateTime?
-  ngay_tao      DateTime  @default(now())
-  ngay_cap_nhat DateTime  @updatedAt
+  id                  String           @id @default(uuid())
+  ma_hoc_sinh         String           @unique
+  ho_ten              String
+  ngay_sinh           DateTime?
+  gioi_tinh           String?          // Nam / Nữ
+  so_thu_tu           Int?             // STT trong danh sách lớp
+  nam_nhap_hoc        Int              @default(2026)
+  khoi_nhap_hoc       Int              @default(6)
+  trang_thai_hoc_sinh TrangThaiHocSinh @default(DANG_HOC)
+  nam_tot_nghiep      String?
+  ngay_tot_nghiep     DateTime?
+  dia_chi             String?
+  lop_hoc_id          String
+  nguoi_dung_id       String?          @unique
+  trang_thai          Boolean          @default(true)
+  da_xoa              Boolean          @default(false)
+  ngay_xoa            DateTime?
+  ngay_tao            DateTime         @default(now())
+  ngay_cap_nhat       DateTime         @updatedAt
 
+  nguoi_dung         nguoi_dung?          @relation(fields: [nguoi_dung_id], references: [id], onDelete: SetNull)
   lop_hoc            lop_hoc              @relation(fields: [lop_hoc_id], references: [id], onDelete: Restrict)
   phu_huynh_hoc_sinh phu_huynh_hoc_sinh[]
+  lich_su_lop_hoc    lich_su_lop_hoc[]
 
   @@index([ma_hoc_sinh])
   @@index([lop_hoc_id])
+  @@index([nam_nhap_hoc])
+  @@index([khoi_nhap_hoc])
+  @@index([trang_thai_hoc_sinh])
+}
+
+model lich_su_lop_hoc {
+  id                 String    @id @default(uuid())
+  hoc_sinh_id        String
+  lop_hoc_id         String
+  nam_hoc            String    // Vd: 2026-2027
+  khoi               Int       // 6, 7, 8, 9
+  so_thu_tu          Int?      // STT trong lớp năm học đó
+  trang_thai_hoc_tap String    @default("DANG_HOC") // DANG_HOC, HOAN_THANH, LUU_BAN, CHUYEN_LOP, TOT_NGHIEP
+  ngay_bat_dau       DateTime  @default(now())
+  ngay_ket_thuc      DateTime?
+  ghi_chu            String?
+  ngay_tao           DateTime  @default(now())
+  ngay_cap_nhat      DateTime  @updatedAt
+
+  hoc_sinh hoc_sinh @relation(fields: [hoc_sinh_id], references: [id], onDelete: Cascade)
+  lop_hoc  lop_hoc  @relation(fields: [lop_hoc_id], references: [id], onDelete: Restrict)
+
+  @@unique([hoc_sinh_id, nam_hoc, lop_hoc_id])
+  @@index([hoc_sinh_id])
+  @@index([lop_hoc_id])
+  @@index([nam_hoc])
 }
 
 model phu_huynh {
@@ -595,5 +676,20 @@ model gioi_thieu {
   @@index([trang_thai])
 }
 
+// ==========================================
+// NHÓM 16 — TRUY CẬP NHANH (BANNER LIÊN KẾT)
+// ==========================================
 
+model truy_cap_nhanh {
+  id            String   @id @default(uuid())
+  ten           String
+  anh           String
+  url           String
+  thu_tu        Int      @default(0)
+  trang_thai    Boolean  @default(true)
+  ngay_tao      DateTime @default(now())
+  ngay_cap_nhat DateTime @updatedAt
 
+  @@index([trang_thai])
+  @@index([thu_tu])
+}

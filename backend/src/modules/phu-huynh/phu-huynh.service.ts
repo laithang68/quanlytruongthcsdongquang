@@ -216,6 +216,70 @@ export class PhuHuynhService {
     };
   }
 
+  // HỦY LIÊN KẾT PHỤ HUYNH VỚI HỌC SINH (Chỉ xóa bản ghi trung gian phu_huynh_hoc_sinh, bảo toàn 100% hồ sơ)
+  async huyLienKetPhuHuynhHocSinh(
+    phuHuynhId: string,
+    hocSinhId: string,
+    user: any,
+    ip?: string,
+    userAgent?: string,
+  ) {
+    if (!phuHuynhId || !hocSinhId) {
+      throw new BadRequestException('Vui lòng cung cấp mã phụ huynh và mã học sinh.');
+    }
+
+    const ph = await this.prisma.phu_huynh.findFirst({
+      where: { id: phuHuynhId, da_xoa: false },
+    });
+    if (!ph) {
+      throw new NotFoundException('Phụ huynh không tồn tại hoặc đã bị xóa.');
+    }
+
+    const hs = await this.prisma.hoc_sinh.findFirst({
+      where: { id: hocSinhId, da_xoa: false },
+    });
+    if (!hs) {
+      throw new NotFoundException('Học sinh không tồn tại hoặc đã bị xóa.');
+    }
+
+    const link = await this.prisma.phu_huynh_hoc_sinh.findUnique({
+      where: {
+        phu_huynh_id_hoc_sinh_id: {
+          phu_huynh_id: phuHuynhId,
+          hoc_sinh_id: hocSinhId,
+        },
+      },
+    });
+
+    if (!link) {
+      throw new NotFoundException('Liên kết phụ huynh - học sinh không tồn tại hoặc đã được hủy trước đó.');
+    }
+
+    await this.prisma.phu_huynh_hoc_sinh.delete({
+      where: {
+        phu_huynh_id_hoc_sinh_id: {
+          phu_huynh_id: phuHuynhId,
+          hoc_sinh_id: hocSinhId,
+        },
+      },
+    });
+
+    await this.ghiNhatKy(
+      user.id,
+      'HUY_LIEN_KET_PHU_HUYNH',
+      phuHuynhId,
+      JSON.stringify({ phu_huynh_id: phuHuynhId, hoc_sinh_id: hocSinhId, quan_he: link.quan_he }),
+      null,
+      ip,
+      userAgent,
+    );
+
+    return {
+      thanh_cong: true,
+      thong_bao: 'Đã hủy liên kết phụ huynh với học sinh thành công.',
+    };
+  }
+
   async xoaMem(id: string, user: any, ip?: string, userAgent?: string) {
     const ph = await this.prisma.phu_huynh.findFirst({ where: { id, da_xoa: false } });
     if (!ph) {

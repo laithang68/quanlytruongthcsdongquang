@@ -49,9 +49,11 @@ export default function TrangQuanTriPhuHuynh() {
   const [showModalTao, setShowModalTao] = useState(false);
   const [showModalSua, setShowModalSua] = useState(false);
   const [showModalLienKet, setShowModalLienKet] = useState(false);
+  const [showModalHuyLienKet, setShowModalHuyLienKet] = useState(false);
   const [showModalXoa, setShowModalXoa] = useState(false);
 
   const [selectedPhuHuynh, setSelectedPhuHuynh] = useState<PhuHuynhItem | null>(null);
+  const [unlinkTarget, setUnlinkTarget] = useState<{ ph: PhuHuynhItem; hs: HocSinhSimple } | null>(null);
 
   const [formTao, setFormTao] = useState({
     ho_ten: '',
@@ -289,6 +291,43 @@ export default function TrangQuanTriPhuHuynh() {
     }
   };
 
+  // Mở modal Hủy liên kết
+  const handleOpenHuyLienKet = (ph: PhuHuynhItem, hs: HocSinhSimple) => {
+    setUnlinkTarget({ ph, hs });
+    setShowModalHuyLienKet(true);
+  };
+
+  // Submit Hủy liên kết
+  const submitHuyLienKet = async () => {
+    if (!unlinkTarget) return;
+    setDangXuLyModal(true);
+    const token = localStorage.getItem('access_token');
+
+    try {
+      const res = await fetch(
+        getApiUrl(`/api/v1/phu-huynh/${unlinkTarget.ph.id}/hoc-sinh/${unlinkTarget.hs.id}`),
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.thanh_cong) {
+        showError('Hủy liên kết thất bại', data.message || data.thong_bao || 'Không thể hủy liên kết.');
+      } else {
+        showSuccess('Hủy liên kết thành công', data.thong_bao || 'Đã hủy liên kết phụ huynh với học sinh thành công.');
+        setShowModalHuyLienKet(false);
+        setUnlinkTarget(null);
+        taiDanhSachPhuHuynh();
+      }
+    } catch (err) {
+      showError('Thao tác thất bại', 'Lỗi kết nối máy chủ.');
+    } finally {
+      setDangXuLyModal(false);
+    }
+  };
+
   // Submit Xóa mềm
   const submitXoa = async () => {
     if (!selectedPhuHuynh) return;
@@ -412,9 +451,21 @@ export default function TrangQuanTriPhuHuynh() {
                             {ph.phu_huynh_hoc_sinh.map((link, idx) => (
                               <span
                                 key={idx}
-                                className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 text-[11px] font-semibold"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 text-xs font-semibold shadow-sm"
                               >
-                                {link.hoc_sinh?.ho_ten} ({link.quan_he})
+                                <span>
+                                  {link.hoc_sinh?.ho_ten} {link.hoc_sinh?.lop_hoc ? `(${link.hoc_sinh.lop_hoc.ten_lop})` : ''} — <span className="text-slate-500 dark:text-slate-400 font-normal">{link.quan_he}</span>
+                                </span>
+                                {hasPerm('phu_huynh_sua') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenHuyLienKet(ph, link.hoc_sinh)}
+                                    title="Hủy liên kết học sinh này"
+                                    className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 font-bold ml-1 p-0.5 rounded hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
                               </span>
                             ))}
                           </div>
@@ -691,6 +742,56 @@ export default function TrangQuanTriPhuHuynh() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL HỦY LIÊN KẾT HỌC SINH */}
+      {showModalHuyLienKet && unlinkTarget && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xl font-bold">
+                🔗
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Hủy liên kết học sinh</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Xác nhận thao tác gỡ quan hệ giám hộ</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 space-y-2 leading-relaxed">
+              <p>Bạn có chắc chắn muốn hủy liên kết:</p>
+              <div className="pl-3 border-l-2 border-amber-500 space-y-1 font-medium">
+                <div>Phụ huynh: <strong className="text-slate-900 dark:text-white">{unlinkTarget.ph.ho_ten}</strong></div>
+                <div>với học sinh: <strong className="text-slate-900 dark:text-white">{unlinkTarget.hs.ho_ten}</strong> {unlinkTarget.hs.lop_hoc ? `- lớp ${unlinkTarget.hs.lop_hoc.ten_lop}` : ''} hay không?</div>
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px] pt-1">
+                ℹ️ Lưu ý: Thao tác này chỉ xóa bản ghi quan hệ giữa phụ huynh và học sinh. Hồ sơ, tài khoản và điểm số của học sinh vẫn được bảo toàn nguyên vẹn.
+              </p>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={dangXuLyModal}
+                onClick={() => {
+                  setShowModalHuyLienKet(false);
+                  setUnlinkTarget(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-semibold transition"
+              >
+                Hủy thao tác
+              </button>
+              <button
+                type="button"
+                disabled={dangXuLyModal}
+                onClick={submitHuyLienKet}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1.5 shadow-lg shadow-rose-600/20"
+              >
+                {dangXuLyModal ? 'Đang hủy...' : 'Xác nhận hủy liên kết'}
+              </button>
+            </div>
           </div>
         </div>
       )}

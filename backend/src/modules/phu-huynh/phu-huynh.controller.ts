@@ -58,6 +58,24 @@ export class PhuHuynhController {
     return this.phuHuynhService.lienKetPhuHuynhHocSinh(dto, req.user, ip, userAgent);
   }
 
+  @Delete(':phu_huynh_id/hoc-sinh/:hoc_sinh_id')
+  @QuyenHan('phu_huynh_sua')
+  async huyLienKetPhuHuynhHocSinh(
+    @Param('phu_huynh_id') phuHuynhId: string,
+    @Param('hoc_sinh_id') hocSinhId: string,
+    @Req() req: any,
+  ) {
+    const ip = req.ip || req.connection?.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    return this.phuHuynhService.huyLienKetPhuHuynhHocSinh(
+      phuHuynhId,
+      hocSinhId,
+      req.user,
+      ip,
+      userAgent,
+    );
+  }
+
   @Patch(':id')
   @QuyenHan('phu_huynh_sua')
   async suaPhuHuynh(

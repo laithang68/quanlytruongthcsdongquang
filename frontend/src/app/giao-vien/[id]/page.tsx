@@ -13,6 +13,10 @@ interface GiaoVienDetail {
   ho_ten: string;
   anh_dai_dien?: string;
   chuc_vu?: string;
+  chuc_vu_id?: string;
+  bo_mon_id?: string;
+  danh_muc_chuc_vu?: { id: string; ten: string; ma: string };
+  danh_muc_bo_mon?: { id: string; ten: string; ma: string };
   trinh_do?: string;
   gioi_thieu?: string;
   email?: string;
@@ -68,7 +72,7 @@ export default function TrangChiTietGiaoVienPublic() {
               <div className="text-xl font-bold text-rose-600 dark:text-rose-400">Không tìm thấy thông tin Giáo viên</div>
               <button
                 onClick={() => router.push('/giao-vien')}
-                className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                className="px-4 py-2 rounded-xl bg-[#E97036] hover:bg-[#D85F25] text-white font-bold text-xs transition"
               >
                 ← Trở về danh sách giáo viên
               </button>
@@ -77,7 +81,7 @@ export default function TrangChiTietGiaoVienPublic() {
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8 transition-colors">
               {/* PROFILE HEADER BLOCK */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 border-b border-slate-200 dark:border-slate-800 pb-8 text-center sm:text-left">
-                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-100 dark:bg-slate-950 border-4 border-orange-300 dark:border-emerald-500/30 overflow-hidden shrink-0 flex items-center justify-center font-bold text-orange-600 dark:text-emerald-400 text-4xl shadow-xl">
+                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-100 dark:bg-slate-950 border-4 border-[#E97036]/30 overflow-hidden shrink-0 flex items-center justify-center font-bold text-[#E97036] text-4xl shadow-xl">
                   {giaoVien.anh_dai_dien ? (
                     <img
                       src={getMediaUrl(giaoVien.anh_dai_dien)}
@@ -91,17 +95,26 @@ export default function TrangChiTietGiaoVienPublic() {
 
                 <div className="space-y-3 flex-1">
                   <div className="space-y-1">
-                    <span className="px-3 py-1 rounded-full bg-orange-100 dark:bg-blue-500/10 text-orange-700 dark:text-blue-400 border border-orange-200 dark:border-blue-500/20 text-xs font-bold uppercase tracking-wider">
+                    <span className="px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-500/10 text-[#E97036] border border-orange-200 dark:border-orange-500/20 text-xs font-bold uppercase tracking-wider">
                       👨‍🏫 CÁN BỘ GIÁO VIÊN
                     </span>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{giaoVien.ho_ten}</h1>
-                    <div className="text-base font-extrabold text-orange-600 dark:text-emerald-400">{giaoVien.chuc_vu || 'Giáo viên'}</div>
+                    <div className="flex flex-wrap items-center gap-2 pt-1 justify-center sm:justify-start">
+                      <span className="text-base font-extrabold text-[#E97036]">
+                        {giaoVien.danh_muc_chuc_vu?.ten || giaoVien.chuc_vu || 'Giáo viên'}
+                      </span>
+                      {giaoVien.danh_muc_bo_mon?.ten && (
+                        <span className="px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold">
+                          Bộ môn: {giaoVien.danh_muc_bo_mon.ten}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-slate-700 dark:text-slate-300 font-medium pt-2">
                     <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800">
                       <span>🏛️ Tổ chuyên môn:</span>
-                      <Link href={`/to-chuc/${giaoVien.to_chuyen_mon?.id}`} className="text-orange-600 dark:text-amber-400 font-extrabold hover:underline">
+                      <Link href={`/to-chuc/${giaoVien.to_chuyen_mon?.id}`} className="text-[#E97036] font-extrabold hover:underline">
                         {giaoVien.to_chuyen_mon?.ten}
                       </Link>
                     </div>
@@ -133,7 +146,7 @@ export default function TrangChiTietGiaoVienPublic() {
               {/* BIOGRAPHY & INTRODUCTION SECTION */}
               <div className="space-y-4">
                 <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-orange-600 dark:bg-emerald-500"></span>
+                  <span className="w-3 h-3 rounded-full bg-[#E97036]"></span>
                   GIỚI THIỆU & QUÁ TRÌNH CÔNG TÁC
                 </h2>
 

@@ -70,7 +70,7 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
 
         <div>
           <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
-            Cổng Quản trị Trường THCS Đông Quang
+            Trang Quản trị Trường THCS Đông Quang
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-[11px] font-medium hidden sm:block">
             Hệ thống quản lý thông tin nhà trường & hạ tầng dữ liệu

@@ -371,6 +371,99 @@ async function main() {
     }
   }
 
+  // 8. Khởi tạo Danh mục Chức vụ chuẩn
+  const chucVuSample = [
+    { ma: 'HIEU_TRUONG', ten: 'Hiệu trưởng', mo_ta: 'Ban Giám hiệu - Quản lý chung', thu_tu: 1 },
+    { ma: 'HIEU_PHO', ten: 'Hiệu phó', mo_ta: 'Ban Giám hiệu - Phó hiệu trưởng', thu_tu: 2 },
+    { ma: 'GIAO_VIEN', ten: 'Giáo viên', mo_ta: 'Giáo viên bộ môn / Giáo viên chủ nhiệm', thu_tu: 3 },
+    { ma: 'GIAO_VU', ten: 'Giáo vụ', mo_ta: 'Cán bộ giáo vụ', thu_tu: 4 },
+    { ma: 'KE_TOAN', ten: 'Kế toán', mo_ta: 'Cán bộ kế toán - tài chính', thu_tu: 5 },
+    { ma: 'NHAN_VIEN', ten: 'Nhân viên', mo_ta: 'Nhân viên hành chính / phục vụ', thu_tu: 6 },
+  ];
+
+  for (const cv of chucVuSample) {
+    await prisma.danh_muc_chuc_vu.upsert({
+      where: { ma: cv.ma },
+      update: { ten: cv.ten, mo_ta: cv.mo_ta, thu_tu: cv.thu_tu },
+      create: cv,
+    });
+  }
+  console.log(`✓ Đã khởi tạo ${chucVuSample.length} danh mục chức vụ chuẩn thành công`);
+
+  // 9. Khởi tạo Danh mục Bộ môn chuẩn
+  const boMonSample = [
+    { ma: 'TOAN', ten: 'Toán', mo_ta: 'Bộ môn Toán học', thu_tu: 1 },
+    { ma: 'NGU_VAN', ten: 'Ngữ văn', mo_ta: 'Bộ môn Ngữ văn', thu_tu: 2 },
+    { ma: 'TIENG_ANH', ten: 'Tiếng Anh', mo_ta: 'Bộ môn Ngoại ngữ (Tiếng Anh)', thu_tu: 3 },
+    { ma: 'VAT_LY', ten: 'Vật lý', mo_ta: 'Bộ môn Vật lý', thu_tu: 4 },
+    { ma: 'HOA_HOC', ten: 'Hóa học', mo_ta: 'Bộ môn Hóa học', thu_tu: 5 },
+    { ma: 'SINH_HOC', ten: 'Sinh học', mo_ta: 'Bộ môn Sinh học', thu_tu: 6 },
+    { ma: 'LICH_SU', ten: 'Lịch sử', mo_ta: 'Bộ môn Lịch sử', thu_tu: 7 },
+    { ma: 'DIA_LY', ten: 'Địa lý', mo_ta: 'Bộ môn Địa lý', thu_tu: 8 },
+    { ma: 'GDCD', ten: 'GDCD', mo_ta: 'Bộ môn Giáo dục công dân', thu_tu: 9 },
+    { ma: 'TIN_HOC', ten: 'Tin học', mo_ta: 'Bộ môn Tin học', thu_tu: 10 },
+    { ma: 'CONG_NGHE', ten: 'Công nghệ', mo_ta: 'Bộ môn Công nghệ', thu_tu: 11 },
+    { ma: 'AM_NHAC', ten: 'Âm nhạc', mo_ta: 'Bộ môn Âm nhạc', thu_tu: 12 },
+    { ma: 'MY_THUAT', ten: 'Mỹ thuật', mo_ta: 'Bộ môn Mỹ thuật', thu_tu: 13 },
+    { ma: 'THE_DUC', ten: 'Thể dục', mo_ta: 'Bộ môn Giáo dục thể chất', thu_tu: 14 },
+  ];
+
+  for (const bm of boMonSample) {
+    await prisma.danh_muc_bo_mon.upsert({
+      where: { ma: bm.ma },
+      update: { ten: bm.ten, mo_ta: bm.mo_ta, thu_tu: bm.thu_tu },
+      create: bm,
+    });
+  }
+  console.log(`✓ Đã khởi tạo ${boMonSample.length} danh mục bộ môn chuẩn thành công`);
+
+  // 10. Khởi tạo Banner Truy cập nhanh mẫu
+  const countTruyCapNhanh = await prisma.truy_cap_nhanh.count();
+  if (countTruyCapNhanh === 0) {
+    const bannersSample = [
+      {
+        ten: 'Cổng Dịch vụ công Quốc gia',
+        anh: '/images/banner-dvc.png',
+        url: 'https://dichvucong.gov.vn',
+        thu_tu: 1,
+        trang_thai: true,
+      },
+      {
+        ten: 'Bộ Giáo dục và Đào tạo',
+        anh: '/images/banner-moet.png',
+        url: 'https://moet.gov.vn',
+        thu_tu: 2,
+        trang_thai: true,
+      },
+      {
+        ten: 'Sở Giáo dục và Đào tạo Thanh Hóa',
+        anh: '/images/banner-so-gddt.png',
+        url: 'https://thanhhoa.edu.vn',
+        thu_tu: 3,
+        trang_thai: true,
+      },
+      {
+        ten: 'Phòng GD&ĐT Thành phố Thanh Hóa',
+        anh: '/images/banner-pgd.png',
+        url: 'https://pgdthanhhoa.edu.vn',
+        thu_tu: 4,
+        trang_thai: true,
+      },
+      {
+        ten: 'Cơ sở Dữ liệu Ngành Giáo dục',
+        anh: '/images/banner-csdl.png',
+        url: 'https://csdl.moet.gov.vn',
+        thu_tu: 5,
+        trang_thai: true,
+      },
+    ];
+
+    for (const b of bannersSample) {
+      await prisma.truy_cap_nhanh.create({ data: b });
+    }
+    console.log(`✓ Đã khởi tạo ${bannersSample.length} banner truy cập nhanh mẫu thành công`);
+  }
+
   console.log('--- Hoàn tất Seed dữ liệu Cơ sở Dữ liệu THCS Đông Quang ---');
 }
 

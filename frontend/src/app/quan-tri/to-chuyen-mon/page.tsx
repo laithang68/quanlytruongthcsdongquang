@@ -12,6 +12,8 @@ interface GiaoVienMember {
   id: string;
   ho_ten: string;
   chuc_vu?: string;
+  danh_muc_chuc_vu?: { ten: string; ma: string };
+  danh_muc_bo_mon?: { ten: string; ma: string };
   anh_dai_dien?: string;
 }
 
@@ -433,11 +435,16 @@ export default function TrangQuanTriToChuyenMon() {
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 >
                   <option value="">-- Chưa gán Tổ trưởng --</option>
-                  {danhSachThanhVien.map((gv) => (
-                    <option key={gv.id} value={gv.id}>
-                      {gv.ho_ten} {gv.chuc_vu ? `(${gv.chuc_vu})` : ''}
-                    </option>
-                  ))}
+                  {danhSachThanhVien.map((gv) => {
+                    const chucVuDisplay = gv.danh_muc_chuc_vu?.ten || gv.chuc_vu;
+                    const boMonDisplay = gv.danh_muc_bo_mon?.ten;
+                    const roleText = [chucVuDisplay, boMonDisplay].filter(Boolean).join(' - ');
+                    return (
+                      <option key={gv.id} value={gv.id}>
+                        {gv.ho_ten} {roleText ? `(${roleText})` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                   * Tổ trưởng bắt buộc phải là giáo viên thuộc chính tổ này.
@@ -502,7 +509,9 @@ export default function TrangQuanTriToChuyenMon() {
                       )}
                       <div>
                         <div className="font-bold text-slate-900 dark:text-white">{gv.ho_ten}</div>
-                        {gv.chuc_vu && <div className="text-slate-500 dark:text-slate-400 text-[11px]">{gv.chuc_vu}</div>}
+                        <div className="text-slate-500 dark:text-slate-400 text-[11px]">
+                          {[gv.danh_muc_chuc_vu?.ten || gv.chuc_vu, gv.danh_muc_bo_mon?.ten].filter(Boolean).join(' • ') || 'Giáo viên'}
+                        </div>
                       </div>
                     </div>
                     {selectedTo.truong_to_id === gv.id && (
