@@ -26,6 +26,9 @@ import { PhanQuyenModule } from './modules/phan-quyen/phan-quyen.module';
 import { DanhMucChucVuModule } from './modules/danh-muc-chuc-vu/danh-muc-chuc-vu.module';
 import { DanhMucBoMonModule } from './modules/danh-muc-bo-mon/danh-muc-bo-mon.module';
 import { TruyCapNhanhModule } from './modules/truy-cap-nhanh/truy-cap-nhanh.module';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
   imports: [
@@ -33,6 +36,12 @@ import { TruyCapNhanhModule } from './modules/truy-cap-nhanh/truy-cap-nhanh.modu
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 120, // Giới hạn 120 request/phút toàn hệ thống, đủ rộng cho thao tác bình thường/dashboard
+      },
+    ]),
     DatabaseModule,
     KiemTraModule,
     XacThucModule,
@@ -61,6 +70,16 @@ import { TruyCapNhanhModule } from './modules/truy-cap-nhanh/truy-cap-nhanh.modu
     TruyCapNhanhModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
+  ],
 })
 export class AppModule {}
+

@@ -14,10 +14,21 @@ export class KiemTraService {
       ket_noi_db = false;
     }
 
+    if (!ket_noi_db) {
+      return {
+        thanh_cong: false,
+        thong_bao: 'Cơ sở dữ liệu không khả dụng',
+        trang_thai_backend: 'HOAT_DONG',
+        co_so_du_lieu: 'MAT_KET_NOI',
+        thoi_gian: new Date().toISOString(),
+      };
+    }
+
     return {
       thanh_cong: true,
-      thong_bao: 'Hệ thống đang hoạt động',
-      co_so_du_lieu: ket_noi_db ? 'Đã kết nối PostgreSQL thành công' : 'Chưa kết nối CSDL',
+      thong_bao: 'Hệ thống đang hoạt động bình thường',
+      trang_thai_backend: 'HOAT_DONG',
+      co_so_du_lieu: 'DA_KET_NOI',
       thoi_gian: new Date().toISOString(),
     };
   }

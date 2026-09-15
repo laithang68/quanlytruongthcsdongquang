@@ -13,8 +13,9 @@ import {
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname, join, resolve, normalize, sep, basename } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import { Throttle } from '@nestjs/throttler';
 import { XacThucGuard } from '../xac-thuc/guards/xac-thuc.guard';
 import { QuyenHanGuard } from '../xac-thuc/guards/quyen-han.guard';
 import { QuyenHan } from '../xac-thuc/decorators/quyen-han.decorator';
@@ -27,10 +28,56 @@ if (!existsSync(uploadDir)) {
   mkdirSync(uploadDir, { recursive: true });
 }
 
+/**
+ * Hàm kiểm tra và giải quyết đường dẫn tệp tin an toàn tuyệt đối chống Path Traversal
+ * Xử lý: null byte, URL encoding (%2e%2e), forward/backward slash, canonical path bounds check
+ */
+function resolveSafeUploadPath(relativePath: string, targetUploadDir: string): string {
+  if (!relativePath || typeof relativePath !== 'string') {
+    throw new BadRequestException('Đường dẫn tệp tin không hợp lệ.');
+  }
+
+  // 1. Kiểm tra null byte injection
+  if (relativePath.includes('\0')) {
+    throw new BadRequestException('Đường dẫn tệp tin chứa ký tự không hợp lệ.');
+  }
+
+  // 2. Decode URL encoded traversal (%2e%2e, %2f, %5c, ...)
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURIComponent(relativePath);
+  } catch {
+    throw new BadRequestException('Đường dẫn tệp tin mã hóa không hợp lệ.');
+  }
+
+  // 3. Chuẩn hóa đường dẫn tương đối
+  const cleanRelative = decodedPath.replace(/^[/\\]+/, '');
+  if (!cleanRelative.startsWith('uploads/') && !cleanRelative.startsWith('uploads\\')) {
+    throw new BadRequestException('Đường dẫn tệp tin phải bắt đầu từ thư mục /uploads/.');
+  }
+
+  const subPath = cleanRelative.substring(7).replace(/^[/\\]+/, '');
+  if (!subPath) {
+    throw new BadRequestException('Tên tệp tin không hợp lệ.');
+  }
+
+  // 4. Resolve canonical path an toàn
+  const canonicalUploadDir = resolve(targetUploadDir);
+  const resolvedPath = resolve(canonicalUploadDir, normalize(subPath));
+
+  // 5. Kiểm tra nghiêm ngặt giới hạn thư mục (Bounds check)
+  if (!resolvedPath.startsWith(canonicalUploadDir + sep) && resolvedPath !== canonicalUploadDir) {
+    throw new BadRequestException('Phát hiện hành vi truy cập tệp tin trái phép (Path Traversal).');
+  }
+
+  return resolvedPath;
+}
+
 // Danh sách các đuôi file thực thi/nguy hiểm bị cấm tuyệt đối
 const DANGEROUS_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.sh', '.php', '.js', '.py', '.ps1',
   '.msi', '.scr', '.com', '.vbs', '.jar', '.reg', '.wsf',
+  '.html', '.htm', '.svg', // Ngăn ngừa Stored XSS qua file HTML/SVG tải lên
 ];
 
 // Danh sách các đuôi file hợp lệ (PDF, Word, Excel, Image, Video)
@@ -50,19 +97,17 @@ export class TepTinController {
     @Query('ten_goc') originalName: string,
     @Res() res: Response,
   ) {
-    if (!relativePath || !relativePath.startsWith('/uploads/')) {
-      throw new BadRequestException('Đường dẫn tệp tin không hợp lệ.');
-    }
-
-    const fileName = relativePath.replace('/uploads/', '');
-    const filePath = join(uploadDir, fileName);
+    const filePath = resolveSafeUploadPath(relativePath, uploadDir);
 
     if (!existsSync(filePath)) {
       throw new NotFoundException('Tệp tin không tồn tại trên hệ thống.');
     }
 
-    const saveName = originalName && originalName.trim() ? originalName.trim() : fileName;
-    return res.download(filePath, saveName);
+    const safeOriginalName = originalName && originalName.trim()
+      ? basename(originalName.trim()).replace(/[^\w.\-\s\u00C0-\u1EF9]/gi, '_')
+      : basename(filePath);
+
+    return res.download(filePath, safeOriginalName);
   }
 
   @Get('xem-pdf')
@@ -70,12 +115,7 @@ export class TepTinController {
     @Query('path') relativePath: string,
     @Res() res: Response,
   ) {
-    if (!relativePath || !relativePath.startsWith('/uploads/')) {
-      throw new BadRequestException('Đường dẫn tệp tin không hợp lệ.');
-    }
-
-    const fileName = relativePath.replace('/uploads/', '');
-    const filePath = join(uploadDir, fileName);
+    const filePath = resolveSafeUploadPath(relativePath, uploadDir);
 
     if (!existsSync(filePath)) {
       throw new NotFoundException('Tệp tin không tồn tại trên hệ thống.');
@@ -90,6 +130,7 @@ export class TepTinController {
   }
 
   @Post('upload')
+  @Throttle({ default: { limit: 30, ttl: 60000 } }) // Cho phép tối đa 30 tệp/phút, bảo vệ flood nhưng không cản trở upload nhiều ảnh
   @UseGuards(XacThucGuard, QuyenHanGuard)
   @QuyenHan(
     'bai_viet_tao',

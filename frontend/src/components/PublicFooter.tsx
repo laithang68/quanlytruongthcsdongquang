@@ -99,9 +99,7 @@ export default function PublicFooter() {
             <li>
               📍 <strong className="text-white">Website:</strong>{" "}
               <a
-                href="http://localhost:3000"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/"
                 className="hover:underline"
               >
                 dongquang.edu.vn

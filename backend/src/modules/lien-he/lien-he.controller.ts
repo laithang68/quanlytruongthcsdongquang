@@ -19,6 +19,7 @@ import { XacThucGuard } from '../xac-thuc/guards/xac-thuc.guard';
 import { QuyenHanGuard } from '../xac-thuc/guards/quyen-han.guard';
 import { QuyenHan } from '../xac-thuc/decorators/quyen-han.decorator';
 import { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('lien-he')
 export class LienHeController {
@@ -28,6 +29,7 @@ export class LienHeController {
   // PUBLIC API: Công dân gửi thông tin phản ánh
   // -------------------------------------------------------------
   @Post('cong-khai')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Giới hạn 5 lần/phút chống spam gửi phản ánh
   async taoPublic(@Body() dto: TaoLienHeDto) {
     return this.lienHeService.taoPublic(dto);
   }

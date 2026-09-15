@@ -1,0 +1,160 @@
+version: '3.8'
+
+# ==============================================================================
+# Docker Compose Production - Cổng thông tin Trường THCS Đông Quang
+# Tối ưu hóa cho hạ tầng: Oracle Cloud Always Free (VM.Standard.A1.Flex, 2 OCPU, 12GB RAM)
+# Kiến trúc bảo mật: Nginx Reverse Proxy -> Frontend + Backend -> PostgreSQL
+# ==============================================================================
+
+networks:
+  thcs_internal_network:
+    name: thcs_dong_quang_network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: thcs_dong_quang_postgres_data
+  uploads_data:
+    name: thcs_dong_quang_uploads_data
+  backups_data:
+    name: thcs_dong_quang_backups_data
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Cơ sở dữ liệu PostgreSQL 17 (Chỉ giao tiếp nội bộ qua Docker network)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: thcs_dong_quang_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Vui long thiet lap POSTGRES_PASSWORD trong file .env}
+      POSTGRES_DB: ${POSTGRES_DB:-thcs_dong_quang}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - backups_data:/backups
+    # TUYỆT ĐỐI KHÔNG mở cổng 5432 ra ngoài host để tránh tấn công brute-force từ Internet
+    expose:
+      - "5432"
+    networks:
+      - thcs_internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-thcs_dong_quang}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2048M
+
+  # ----------------------------------------------------------------------------
+  # 2. Backend API Service (NestJS + Prisma)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: thcs_dong_quang_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-thcs_dong_quang}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Vui long thiet lap JWT_SECRET trong file .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Vui long thiet lap JWT_REFRESH_SECRET trong file .env}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      QUAN_TRI_EMAIL: ${QUAN_TRI_EMAIL:-thangbe6868@gmail.com}
+      QUAN_TRI_MAT_KHAU: ${QUAN_TRI_MAT_KHAU:-}
+    volumes:
+      - uploads_data:/app/uploads
+    expose:
+      - "3001"
+    networks:
+      - thcs_internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/api/v1/kiem-tra || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2048M
+
+  # ----------------------------------------------------------------------------
+  # 3. Frontend Web Application (Next.js 14)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_API_URL để trống cho Same-Origin routing qua Nginx
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    container_name: thcs_dong_quang_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    expose:
+      - "3000"
+    networks:
+      - thcs_internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2048M
+
+  # ----------------------------------------------------------------------------
+  # 4. Nginx Reverse Proxy (Cổng giao tiếp duy nhất đón nhận Internet)
+  # ----------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: thcs_dong_quang_nginx
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - thcs_internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/api/v1/kiem-tra || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M

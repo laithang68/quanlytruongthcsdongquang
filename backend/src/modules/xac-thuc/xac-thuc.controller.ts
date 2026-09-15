@@ -12,6 +12,14 @@ import { NguoiDungHienTai } from './decorators/nguoi-dung-hien-tai.decorator';
 export class XacThucController {
   constructor(private readonly xacThucService: XacThucService) {}
 
+  private isCookieSecure(): boolean {
+    if (process.env.COOKIE_SECURE !== undefined) {
+      return process.env.COOKIE_SECURE === 'true';
+    }
+    const frontendUrl = process.env.FRONTEND_URL || '';
+    return process.env.NODE_ENV === 'production' && frontendUrl.startsWith('https://');
+  }
+
   @Post('dang-nhap')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // Giới hạn 5 lần thử/phút chống brute-force
@@ -21,10 +29,10 @@ export class XacThucController {
   ) {
     const result = await this.xacThucService.dangNhap(dto);
 
-    // 1. Thiết lập HttpOnly Cookie cho Refresh Token
+    // 1. Thiết lập HttpOnly Cookie cho Refresh Token (Secure khi chạy HTTPS hoặc COOKIE_SECURE=true)
     res.cookie('thcs_dong_quang_refresh', result.refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.isCookieSecure(),
       sameSite: 'lax',
       path: '/api/v1/xac-thuc',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
@@ -52,6 +60,7 @@ export class XacThucController {
   }
 
   @Post('lam-moi')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async lamMoiToken(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -68,7 +77,7 @@ export class XacThucController {
     // Gửi HttpOnly Cookie mới cho Refresh Token đã được Rotate
     res.cookie('thcs_dong_quang_refresh', result.refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.isCookieSecure(),
       sameSite: 'lax',
       path: '/api/v1/xac-thuc',
       maxAge: 7 * 24 * 60 * 60 * 1000,

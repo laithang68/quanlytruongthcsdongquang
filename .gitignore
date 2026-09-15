@@ -7,13 +7,18 @@ node_modules/
 dist/
 build/
 out/
+*.tsbuildinfo
 
 # Environment files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
 # Logs
 logs
@@ -25,9 +30,19 @@ yarn-error.log*
 # Database / Prisma
 prisma/migrations/dev.db
 *.sqlite
+*.sqlite3
 
 # IDE & System
 .vscode/
 .idea/
-.DS_Store
-Thumbs.db
+# Temporary test & scratch files
+scratch/
+test_passwords.js
+backend/test_passwords.js
+backend/read_pgadmin.py
+
+# Backups
+backups/
+*.dump.gz
+*.tar.gz
+

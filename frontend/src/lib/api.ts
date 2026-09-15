@@ -1,9 +1,12 @@
 /**
  * API Config & Utility Client cho Cổng thông tin THCS Đông Quang
  * Tự động cấu hình theo biến môi trường NEXT_PUBLIC_API_URL
+ * Khi NEXT_PUBLIC_API_URL="" (chuỗi rỗng), hệ thống tự động sử dụng kiến trúc Same-Origin qua Nginx
  */
-
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL !== undefined
+    ? process.env.NEXT_PUBLIC_API_URL
+    : 'http://localhost:3001';
 
 /**
  * Ghép đường dẫn API hoàn chỉnh từ path

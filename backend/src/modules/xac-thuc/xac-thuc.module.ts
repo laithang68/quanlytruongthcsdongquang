@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { XacThucController } from './xac-thuc.controller';
 import { XacThucService } from './xac-thuc.service';
 import { XacThucPhienService } from './xac-thuc-phien.service';
@@ -11,12 +10,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 5,
-      },
-    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

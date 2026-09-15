@@ -1,5 +1,5 @@
-import { Controller, Get, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, Req, Res, HttpStatus } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { KiemTraService } from './kiem-tra.service';
 import { PrismaService } from '../../database/prisma.service';
@@ -13,8 +13,12 @@ export class KiemTraController {
   ) {}
 
   @Get()
-  kiemTra() {
-    return this.kiemTraService.kiemTraHeThong();
+  async kiemTra(@Res({ passthrough: true }) res: Response) {
+    const result = await this.kiemTraService.kiemTraHeThong();
+    if (!result.thanh_cong) {
+      res.status(HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    return result;
   }
 
   @Get('thong-ke')
